@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Painel Admin</title>
+    <link rel="icon" href="data:,">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        .login-card .emoji { font-size: 3rem; }
+        .login-card h1 { font-size: 1.3rem; color: #1e293b; margin: 0.8rem 0 0.3rem; }
+        .login-card p { color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .login-card input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .login-card input:focus { border-color: #0284c7; }
+        .login-card button {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            background: #0284c7;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .login-card button:hover { background: #0369a1; }
+        .erro {
+            display: none;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            border-radius: 8px;
+            padding: 0.6rem;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+        .erro.show { display: block; }
+        .voltar { display: block; margin-top: 1.2rem; color: #64748b; font-size: 0.85rem; text-decoration: none; }
+        .voltar:hover { color: #0284c7; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="emoji">🔒</div>
+        <h1>Área do Organizador</h1>
+        <p>Acesso restrito à equipe de organização do torneio</p>
+        <div class="erro" id="erro">Senha incorreta. Tente novamente.</div>
+        <form onsubmit="logar(event)">
+            <input type="password" id="senha" placeholder="Senha de administrador" autofocus required>
+            <button type="submit">Entrar</button>
+        </form>
+        <a class="voltar" href="/home.html">← Voltar</a>
+    </div>
+
+<script>
+async function logar(e) {
+    e.preventDefault();
+    const senha = document.getElementById('senha').value;
+    const erro = document.getElementById('erro');
+    erro.classList.remove('show');
+
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senha })
+        });
+        if (!res.ok) {
+            erro.classList.add('show');
+            document.getElementById('senha').select();
+            return;
+        }
+        // Redireciona para onde o usuário queria ir (validado: só caminhos internos)
+        let next = new URLSearchParams(location.search).get('next') || '/home.html';
+        if (!next.startsWith('/') || next.startsWith('//')) next = '/home.html';
+        location.href = next;
+    } catch (e) {
+        alert('Servidor offline. Rode: node server.js');
+    }
+}
+</script>
+</body>
+</html>

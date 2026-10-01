@@ -1,0 +1,12 @@
+{
+  "name": "tournament-bracket",
+  "version": "1.0.0",
+  "description": "Sistema de chaveamento dupla-eliminação para torneio de robôs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

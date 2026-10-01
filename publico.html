@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Torneio de Robôs - Transmissão Pública</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="stile.css">
+    <style>
+        /* Ajustes específicos para a página pública (somente leitura) */
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #00bcd4;
+            margin-bottom: 5px;
+        }
+        .public-container {
+            max-width: 1760px;
+            margin: 0 auto;
+        }
+        /* agenda pública: grid mais denso */
+        .agenda-grid {
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        }
+        /* chaveamento usa toda a largura útil, com scroll horizontal suave */
+        .bracket-wrapper {
+            padding: 2rem 0.5rem;
+        }
+        .bracket-wrapper::-webkit-scrollbar { height: 10px; }
+        .bracket-wrapper::-webkit-scrollbar-thumb { background: #444; border-radius: 5px; }
+        /* match boxes no tema escuro da tela pública */
+        .match-box {
+            background: #1f2937;
+            border-color: #475569;
+        }
+        .match-box .tag { color: #94a3b8; border-bottom-color: #475569; }
+        .match-box .player.winner { color: #4ade80; }
+        .match-box .player.loser { color: #fb923c; }
+        .match-box.final-box {
+            background: linear-gradient(135deg, #292103 0%, #451a03 100%);
+        }
+        .secao-titulo {
+            border-bottom: 2px solid #00bcd4;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            color: #00bcd4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Torneio de Robôs - Chaveamento ao Vivo</h1>
+        <p>Acompanhe em tempo real o andamento das lutas e o chaveamento oficial</p>
+    </header>
+
+    <div class="public-container">
+        
+        <!-- SEÇÃO: AGENDA / PRÓXIMAS LUTAS -->
+        <div class="card" style="margin-bottom: 40px; background: #1e1e1e; border: 1px solid #333;">
+            <h2 class="secao-titulo">📅 Agenda de Lutas & Status</h2>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px;">
+                    <h3 style="color: #ff9800;">Chave dos Vencedores (Winners)</h3>
+                    <div id="public-agenda-winners" class="agenda-grid"></div>
+                </div>
+                <div style="flex: 1; min-width: 300px;">
+                    <h3 style="color: #e91e63;">Chave dos Perdedores (Losers)</h3>
+                    <div id="public-agenda-losers" class="agenda-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEÇÃO: CHAVEAMENTO GRÁFICO -->
+        <div class="card" style="background: #1e1e1e; border: 1px solid #333;">
+            <h2 class="secao-titulo">🏆 Chaveamento Dinâmico</h2>
+            
+            <div class="bracket-wrapper" id="bracket-wrapper" style="background: #181818;">
+                <svg id="svg-lines" class="connections"></svg>
+                <div class="challonge-layout" id="challonge-layout">
+                    <div class="bracket-side losers" id="losers-tree"></div>
+                    <div class="bracket-column" id="center-column"></div>
+                    <div class="bracket-side winners" id="winners-tree"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT EXTERNO (Público Módulo JS) -->
+    <script type="module" src="publico.js"></script>
+</body>
+</html>

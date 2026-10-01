@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel do Administrador - Torneio de Robôs</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+    <header>
+        <h1>Painel Administrativo - Torneio de Robôs</h1>
+        <nav>
+            <a href="home.html" style="color:#94a3b8; text-decoration:none; margin-right:1rem; align-self:center;">← Home</a>
+            <button class="active" onclick="mudarAba('competidores', event)">Competidores</button>
+            <button onclick="mudarAba('agenda', event)">Agenda de Lutas</button>
+            <button onclick="mudarAba('chaveamento', event)">Chaveamento</button>
+            <a href="/api/logout" style="color:#dc2626; text-decoration:none; margin-left:1rem; align-self:center; font-weight:600;">Sair ➜</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        
+        <!-- ABA 1: COMPETIDORES -->
+        <div id="tab-competidores" class="tab-content active">
+            <div class="card">
+                <h2>Adicionar Competidor</h2>
+                <div class="form-group">
+                    <input type="text" id="nomeRobo" placeholder="Nome do Robô / Competidor">
+                    <input type="text" id="equipe" placeholder="Nome da Equipe (Opcional)">
+                    <select id="categoria">
+                        <option value="12">Categoria 12 lbs</option>
+                        <option value="30">Categoria 30 lbs</option>
+                    </select>
+                    <button class="btn-primary" id="btnAdicionar">Adicionar</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Lista de Inscritos</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nome</th>
+                            <th>Equipe</th>
+                            <th>Categoria</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-competidores">
+                        <!-- Preenchido via JS -->
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px;">
+                    <button class="btn-success" id="btnIniciar" style="width: 100%; padding: 12px; font-size: 1.1rem;">Iniciar Torneio / Gerar Chaveamento</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 2: AGENDA DE LUTAS -->
+        <div id="tab-agenda" class="tab-content">
+            <div class="card" style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+                <strong>🕒 Gerar horários automaticamente</strong>
+                <span style="font-size:0.85rem; color:#64748b;">Regra: 40 min de intervalo por robô · luta a cada 15 min</span>
+                <label>Início: <input type="text" id="horaInicio" placeholder="10:00" maxlength="5" style="width:80px; text-align:center;"></label>
+                <button class="btn-primary" onclick="gerarHorarios()">Gerar Agenda</button>
+            </div>
+            <div class="agenda-secao winners">
+                <h3>Chave dos Vencedores (Winners)</h3>
+                <div id="container-agenda-winners" class="agenda-grid"></div>
+            </div>
+            <div class="agenda-secao losers">
+                <h3>Chave dos Perdedores (Losers)</h3>
+                <div id="container-agenda-losers" class="agenda-grid"></div>
+            </div>
+        </div>
+
+        <!-- ABA 3: CHAVEAMENTO -->
+        <div id="tab-chaveamento" class="tab-content">
+            <div class="card" style="text-align: center; margin-bottom: 1rem;">
+                <h2>Chaveamento Dinâmico (Estilo Challonge)</h2>
+            </div>
+            
+            <div class="bracket-wrapper" id="bracket-wrapper">
+                <svg id="svg-lines" class="connections"></svg>
+                <div class="challonge-layout" id="challonge-layout">
+                    <div class="bracket-side losers" id="losers-tree"></div>
+                    <div class="bracket-column" id="center-column"></div>
+                    <div class="bracket-side winners" id="winners-tree"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT EXTERNO (Módulo JS) -->
+    <script type="module" src="admin.js"></script>
+</body>
+</html>

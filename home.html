@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneio de Robôs - Home</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="stile.css">
+    <style>
+        .home-container { max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
+        .home-container h1 { text-align: center; margin-bottom: 0.5rem; }
+        .home-container .sub { text-align: center; color: #64748b; margin-bottom: 2rem; }
+        .cat-card {
+            background: white; border-radius: 8px; padding: 1.2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem;
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .cat-card .nome { font-size: 1.2rem; font-weight: 700; }
+        .cat-card .links { display: flex; gap: 0.5rem; }
+        .cat-card .links a, .cat-card .links button {
+            padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;
+            font-weight: 600; font-size: 0.85rem; border: none; cursor: pointer;
+        }
+        .link-admin { background: var(--accent-blue); color: white; }
+        .link-publico { background: #0f766e; color: white; }
+        .btn-excluir-cat { background: var(--accent-red); color: white; }
+        .nova-cat { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
+        .nova-cat input { flex: 1; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🤖 Torneio de Robôs</h1>
+        <nav></nav>
+    </header>
+
+    <div class="home-container">
+        <div class="card">
+            <h2 style="margin-top:0">Categorias</h2>
+            <p style="color:#64748b; font-size:0.9rem;">Cada categoria tem seu próprio chaveamento, agenda e banco de dados local.</p>
+            <div id="lista-categorias"></div>
+            <div class="nova-cat">
+                <input type="text" id="nomeCategoria" placeholder="Nova categoria (ex: 12lbs, 30lbs, 10kg)">
+                <button class="btn-success" onclick="criarCategoria()">+ Criar</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+async function carregarCategorias() {
+    const div = document.getElementById('lista-categorias');
+    let cats;
+    try {
+        const res = await fetch('/api/categorias');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        cats = await res.json();
+    } catch (e) {
+        div.innerHTML = `<p style="color:#dc2626; font-weight:600;">⚠️ Servidor offline.<br><small>No terminal, rode: <code>node server.js</code> (dentro da pasta tournament-bracket) e recarregue a página.</small></p>`;
+        return;
+    }
+    if (!cats.length) {
+        div.innerHTML = '<p style="color:#94a3b8;">Nenhuma categoria criada ainda.</p>';
+        return;
+    }
+    div.innerHTML = cats.map(c => `
+        <div class="cat-card">
+            <span class="nome">🏆 ${c}</span>
+            <span class="links">
+                <a class="link-admin" href="admin.html?cat=${encodeURIComponent(c)}">⚙️ Painel Admin</a>
+                <a class="link-publico" href="publico.html?cat=${encodeURIComponent(c)}" target="_blank">📺 Tela Pública</a>
+            </span>
+        </div>
+    `).join('');
+}
+
+async function criarCategoria() {
+    const input = document.getElementById('nomeCategoria');
+    const nome = input.value.trim().replace(/\s+/g, '_');
+    if (!nome) return alert('Digite o nome da categoria!');
+    if (!/^[a-zA-Z0-9_-]+$/.test(nome)) return alert('Use apenas letras, números, - e _');
+
+    try {
+        const res = await fetch('/api/torneio/' + encodeURIComponent(nome), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ competidores: [], lutas: {} })
+        });
+        if (res.status === 401) {
+            location.href = '/login.html?next=' + encodeURIComponent(location.pathname);
+            return;
+        }
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+    } catch (e) {
+        return alert('⚠️ Erro ao criar categoria: ' + e.message);
+    }
+    input.value = '';
+    carregarCategorias();
+}
+
+carregarCategorias();
+</script>
+</body>
+</html>
