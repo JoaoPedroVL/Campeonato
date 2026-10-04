@@ -1,13 +1,19 @@
-// Servidor local do Torneio de Robôs — sem dependências externas
+// Servidor local do Torneio de Robôs — com Firebase Firestore
 // Uso: node server.js  →  http://localhost:8000
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+const admin = require('firebase-admin');
+const serviceAccount = require('./serviceAccount.json');
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+const db = admin.firestore();
+
 const PORT = process.env.PORT || 8000;
 const ROOT = __dirname;
-const DATA_DIR = path.join(__dirname, 'data');
 // Senha do painel admin (mude aqui ou use a var de ambiente ADMIN_SENHA)
 const ADMIN_SENHA = process.env.ADMIN_SENHA || 'robotica123';
 // Token de sessão derivado da senha (não expõe a senha no cookie)
@@ -17,8 +23,6 @@ function isAdmin(req) {
   const cookies = (req.headers.cookie || '').split(';').map(c => c.trim());
   return cookies.includes('admin_auth=' + TOKEN);
 }
-
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -33,24 +37,18 @@ const MIME = {
 // Valida nome da categoria (apenas letras, números, - e _)
 const catOk = (c) => /^[a-zA-Z0-9_-]{1,40}$/.test(c);
 
-const estadoInicial = () => ({ competidores: [], lutas: {}, atualizadoEm: null });
-
-function lerEstado(cat) {
-  const file = path.join(DATA_DIR, cat + '.json');
-  if (!fs.existsSync(file)) return estadoInicial();
-  try {
-    return { ...estadoInicial(), ...JSON.parse(fs.readFileSync(file, 'utf8')) };
-  } catch {
-    return estadoInicial();
-  }
+async function lerEstado(cat) {
+  const doc = await db.collection('categorias').doc(cat).get();
+  if (!doc.exists) return { competidores: [], lutas: {}, atualizadoEm: null };
+  return doc.data();
 }
 
-function salvarEstado(cat, estado) {
+async function salvarEstado(cat, estado) {
   estado.atualizadoEm = new Date().toISOString();
-  fs.writeFileSync(path.join(DATA_DIR, cat + '.json'), JSON.stringify(estado, null, 2));
+  await db.collection('categorias').doc(cat).set(estado);
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const pathname = decodeURIComponent(url.pathname);
 
@@ -61,8 +59,13 @@ const server = http.createServer((req, res) => {
     if (!catOk(cat)) { res.writeHead(400); return res.end('{"error":"categoria invalida"}'); }
 
     if (req.method === 'GET') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify(lerEstado(cat)));
+      try {
+        const estado = await lerEstado(cat);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify(estado));
+      } catch (e) {
+        res.writeHead(500); return res.end('{"error":"erro ao ler"}');
+      }
     }
     if (req.method === 'PUT') {
       // Escrita (admin) exige sessão logada (cookie) ou header com senha
@@ -72,10 +75,10 @@ const server = http.createServer((req, res) => {
       }
       let body = '';
       req.on('data', c => body += c);
-      req.on('end', () => {
+      req.on('end', async () => {
         try {
           const estado = JSON.parse(body);
-          salvarEstado(cat, { competidores: estado.competidores || [], lutas: estado.lutas || {} });
+          await salvarEstado(cat, { competidores: estado.competidores || [], lutas: estado.lutas || {} });
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end('{"ok":true}');
         } catch (e) {
@@ -87,9 +90,14 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/categorias' && req.method === 'GET') {
-    const cats = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''));
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify(cats));
+    try {
+      const snapshot = await db.collection('categorias').get();
+      const cats = snapshot.docs.map(d => d.id);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify(cats));
+    } catch (e) {
+      res.writeHead(500); return res.end('{"error":"erro ao listar categorias"}');
+    }
   }
 
   // ---- Login de admin ----
