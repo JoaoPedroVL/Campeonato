@@ -119,6 +119,133 @@ window.excluirCompetidor = async function(index) {
 };
 
 // ============================================================
+// IMPORTAÇÃO DE PLANILHA (CSV / XLSX)
+// Colunas esperadas: nome, equipe (opcional), categoria (opcional)
+// ============================================================
+let dadosImportacao = []; // linhas validadas aguardando confirmação
+
+function normalizarCabecalho(h) {
+    return String(h || '').trim().toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, ''); // remove acentos
+}
+
+const CATEGORIA_FIXA = '12'; // categoria padrão aplicada a todos os importados
+
+function extrairLinhas(linhasObj) {
+    // Planilha: colunas "Robô" (nome) e "Equipe" — Categoria/Classe são ignoradas
+    const resultado = [];
+    const erros = [];
+    linhasObj.forEach((linha, i) => {
+        const cols = {};
+        Object.keys(linha).forEach(k => { cols[normalizarCabecalho(k)] = linha[k]; });
+
+        const nome = String(cols['robo'] || cols['nome'] || cols['competidor'] || '').trim();
+        const equipe = String(cols['equipe'] || cols['time'] || '-').trim() || '-';
+
+        if (!nome) {
+            if (Object.values(linha).some(v => String(v).trim())) {
+                erros.push(`Linha ${i + 2}: sem nome (ignorada)`);
+            }
+            return; // linha vazia ou sem nome
+        }
+        resultado.push({ nome, equipe, categoria: CATEGORIA_FIXA });
+    });
+    return { resultado, erros };
+}
+
+async function lerPlanilha(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (['csv', 'txt', 'tsv'].includes(ext)) {
+        // Texto separado (suporta ; , ou TAB como separador)
+        const texto = await file.text();
+        const linhas = texto.split(/\r?\n/).filter(l => l.trim());
+        if (!linhas.length) return [];
+        const sep = linhas[0].includes('\t') ? '\t' : (linhas[0].includes(';') ? ';' : ',');
+        const cab = linhas[0].split(sep).map(normalizarCabecalho);
+        return linhas.slice(1).map(l => {
+            const vals = l.split(sep);
+            const obj = {};
+            cab.forEach((c, i) => obj[c] = vals[i]);
+            return obj;
+        });
+    }
+    // XLSX/XLS via SheetJS
+    if (typeof XLSX === 'undefined') throw new Error('Biblioteca XLSX não carregada (sem internet?)');
+    const buffer = await file.arrayBuffer();
+    const wb = XLSX.read(buffer, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws, { defval: '' });
+}
+
+document.getElementById('arquivoPlanilha').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    const preview = document.getElementById('preview-importacao');
+    const btn = document.getElementById('btnImportar');
+    if (!file) { preview.innerHTML = ''; btn.style.display = 'none'; return; }
+
+    try {
+        const linhas = await lerPlanilha(file);
+        const { resultado, erros } = extrairLinhas(linhas);
+        dadosImportacao = resultado;
+
+        if (!resultado.length) {
+            preview.innerHTML = `<p style="color:#f44336;">⚠️ Nenhum competidor válido encontrado. Confira o cabeçalho: <b>Robô | Categoria | Classe | Equipe</b>.</p>`;
+            btn.style.display = 'none';
+            return;
+        }
+
+        const duplicados = resultado.filter(n => competidores.some(c => c.nome.toLowerCase() === n.nome.toLowerCase()));
+        preview.innerHTML = `
+            <p style="color:#4CAF50;">✅ ${resultado.length} competidor(es) encontrado(s)${duplicados.length ? ` — <span style="color:#FFC107;">${duplicados.length} já cadastrado(s) serão pulados</span>` : ''}:</p>
+            <table style="max-height:250px; overflow:auto; display:block;">
+                <thead><tr><th>Nome</th><th>Equipe</th><th>Categoria</th></tr></thead>
+                <tbody>
+                    ${resultado.map(r => `<tr>
+                        <td ${duplicados.includes(r) ? 'style="color:#FFC107;"' : ''}>${r.nome}${duplicados.includes(r) ? ' (já existe)' : ''}</td>
+                        <td>${r.equipe}</td><td>${r.categoria} lbs</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+            ${erros.length ? `<p style="color:#FFC107; font-size:0.85rem;">⚠️ ${erros.join('<br>⚠️ ')}</p>` : ''}
+        `;
+        btn.style.display = 'inline-block';
+    } catch (err) {
+        console.error(err);
+        preview.innerHTML = `<p style="color:#f44336;">⚠️ Erro ao ler arquivo: ${err.message}</p>`;
+        btn.style.display = 'none';
+    }
+});
+
+document.getElementById('btnImportar').addEventListener('click', async () => {
+    if (!dadosImportacao.length) return;
+    const existentes = new Set(competidores.map(c => c.nome.toLowerCase()));
+    const novos = dadosImportacao.filter(d => !existentes.has(d.nome.toLowerCase()));
+    if (!novos.length) return alert('Todos os nomes já estão cadastrados.');
+
+    competidores.push(...novos);
+    await salvarEstado();
+    renderizarCompetidores();
+
+    alert(`✅ ${novos.length} competidor(es) importado(s) com sucesso!`);
+    dadosImportacao = [];
+    document.getElementById('preview-importacao').innerHTML = '';
+    document.getElementById('btnImportar').style.display = 'none';
+    document.getElementById('arquivoPlanilha').value = '';
+});
+
+// Modelo CSV para download
+document.getElementById('linkModelo').addEventListener('click', (e) => {
+    e.preventDefault();
+    const csv = 'Robô\tCategoria\tClasse\tEquipe\nRobô Exemplo\t1,3kg\t-\tEquipe Alpha\nOutro Robô\t1,3kg\t-\tEquipe Beta\n';
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'modelo-competidores.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+});
+
+// ============================================================
 // INICIAR TORNEIO (genérico: 16 / 32 / 64 vagas)
 // ============================================================
 const WID = (r, i) => `W${r}_${i}`;
