@@ -6,11 +6,24 @@ const CATEGORIA = new URLSearchParams(location.search).get('cat') || 'geral';
 
 let lutas = {};
 let ultimaAtualizacao = null;
+let currentTab = 'agenda';
 
 // Polling de tempo real (3s)
 function sincronizarBancoPublico() {
     carregarEExibir();
     setInterval(carregarEExibir, 3000);
+}
+
+// Tab switching
+window.mudarAbaPublica = function(abaId, e) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('header nav button').forEach(el => el.classList.remove('active'));
+
+    document.getElementById(`tab-${abaId}`).classList.add('active');
+    if (e && e.target) e.target.classList.add('active');
+
+    currentTab = abaId;
+    renderCurrentTab();
 }
 
 async function carregarEExibir() {
@@ -21,14 +34,24 @@ async function carregarEExibir() {
         if (dados.atualizadoEm === ultimaAtualizacao) return;
         ultimaAtualizacao = dados.atualizadoEm;
         lutas = dados.lutas || {};
-        renderizarAgendaPublica();
-        renderizarChaveamentoPublico();
-        setTimeout(desenharLinhas, 100);
+        renderCurrentTab();
     } catch (erro) {
         console.error('Erro ao carregar dados:', erro);
         const c = document.getElementById('public-agenda-winners');
         if (c && !ultimaAtualizacao) c.innerHTML = `<p style="color:#f44336;">⚠️ Erro de conexão com o servidor local.</p>`;
     }
+}
+
+function renderCurrentTab() {
+    if (currentTab === 'agenda') {
+        renderizarAgendaPublica();
+    } else if (currentTab === 'chaveamento') {
+        renderizarChaveamentoPublico();
+        setTimeout(desenharLinhas, 100);
+    } else if (currentTab === 'podio') {
+        renderizarPodioPublica();
+    }
+}
 }
 
 function renderizarAgendaPublica() {
@@ -213,6 +236,48 @@ function conectarNos(idOrigem, idDestino, svg, wrapperRect) {
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", `M ${x1} ${y1} L ${mx} ${y1} L ${mx} ${y2} L ${x2} ${y2}`);
         svg.appendChild(path);
+    }
+}
+
+// ============================================================
+// PÓDIO (público)
+// ============================================================
+function renderizarPodioPublica() {
+    const container = document.getElementById('podio-container-public');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const campeao = lutas['CAMPEAO']?.win || null;
+    const finalMatch = lutas['FINAL'];
+    const segundo = finalMatch ? (finalMatch.p1 === campeao ? finalMatch.p2 : finalMatch.p1) : null;
+    let terceiro = null;
+    for (const l of Object.values(lutas)) {
+        if (l.lado === 'losers' && l.nextWin === 'FINAL' && l.los) {
+            terceiro = l.los;
+            break;
+        }
+    }
+
+    const lugares = [
+        { pos: 1, nome: campeao, emoji: '🥇', cor: '#ffd700' },
+        { pos: 2, nome: segundo, emoji: '🥈', cor: '#c0c0c0' },
+        { pos: 3, nome: terceiro, emoji: '🥉', cor: '#cd7f32' }
+    ];
+
+    lugares.forEach(l => {
+        if (!l.nome) return;
+        const box = document.createElement('div');
+        box.style.cssText = `flex:0 0 180px; background:linear-gradient(135deg,${l.cor}22,${l.cor}44); border:3px solid ${l.cor}; border-radius:16px; padding:1.5rem; text-align:center; box-shadow:0 8px 20px ${l.cor}44;`;
+        box.innerHTML = `
+            <div style="font-size:3rem;">${l.emoji}</div>
+            <div style="font-size:1.2rem; color:#666; margin-top:0.3rem;">${l.pos}º lugar</div>
+            <div style="font-size:1.5rem; font-weight:bold; margin-top:0.5rem; color:#111;">${l.nome}</div>
+        `;
+        container.appendChild(box);
+    });
+
+    if (!campeao) {
+        container.innerHTML = '<p style="color:#888; font-size:1.1rem;">Torneio ainda não finalizado.</p>';
     }
 }
 

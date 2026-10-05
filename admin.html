@@ -15,6 +15,7 @@
             <button class="active" onclick="mudarAba('competidores', event)">Competidores</button>
             <button onclick="mudarAba('agenda', event)">Agenda de Lutas</button>
             <button onclick="mudarAba('chaveamento', event)">Chaveamento</button>
+            <button onclick="mudarAba('podio', event)">Pódio</button>
             <a href="/api/logout" style="color:#dc2626; text-decoration:none; margin-left:1rem; align-self:center; font-weight:600;">Sair ➜</a>
         </nav>
     </header>
@@ -89,6 +90,14 @@
                     <div class="bracket-column" id="center-column"></div>
                     <div class="bracket-side winners" id="winners-tree"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ABA 4: PÓDIO -->
+        <div id="tab-podio" class="tab-content">
+            <div class="card" style="text-align:center;">
+                <h2>🏆 Pódio Final</h2>
+                <div id="podio-container" style="display:flex; justify-content:center; gap:2rem; margin-top:2rem; flex-wrap:wrap;"></div>
             </div>
         </div>
 

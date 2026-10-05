@@ -74,6 +74,7 @@ window.mudarAba = function(abaId, e) {
         renderizarChaveamento();
         setTimeout(desenharLinhas, 100);
     }
+    if (abaId === 'podio') renderizarPodio();
 }
 
 // ============================================================
@@ -142,9 +143,10 @@ document.getElementById('btnIniciar').addEventListener('click', async () => {
 
     lutas = {};
 
-    // Vagas: 16, 32 ou 64 (menor potência de 2 ≥ número de robôs, mín. 16)
-    let VAGAS = 16;
+    // Vagas: menor potência de 2 ≥ número de robôs (sem mínimo fixo, máx. 64)
+    let VAGAS = 1;
     while (VAGAS < n) VAGAS *= 2;
+    if (VAGAS > 64) VAGAS = 64;
 
     const R = Math.log2(VAGAS);      // rodadas da chave winners
     const LR = 2 * (R - 1);          // rodadas da chave losers
@@ -612,6 +614,51 @@ window.addEventListener('resize', () => {
         desenharLinhas();
     }
 });
+
+// ============================================================
+// PÓDIO
+// ============================================================
+function renderizarPodio() {
+    const container = document.getElementById('podio-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    // 1º lugar
+    const campeao = lutas['CAMPEAO']?.win || null;
+    // 2º lugar: perdedor da FINAL
+    const finalMatch = lutas['FINAL'];
+    const segundo = finalMatch ? (finalMatch.p1 === campeao ? finalMatch.p2 : finalMatch.p1) : null;
+    // 3º lugar: perdedor da Losers Final (a luta de losers que alimenta a FINAL)
+    let terceiro = null;
+    for (const l of Object.values(lutas)) {
+        if (l.lado === 'losers' && l.nextWin === 'FINAL' && l.los) {
+            terceiro = l.los;
+            break;
+        }
+    }
+
+    const lugares = [
+        { pos: 1, nome: campeao, emoji: '🥇', cor: '#ffd700' },
+        { pos: 2, nome: segundo, emoji: '🥈', cor: '#c0c0c0' },
+        { pos: 3, nome: terceiro, emoji: '🥉', cor: '#cd7f32' }
+    ];
+
+    lugares.forEach(l => {
+        if (!l.nome) return;
+        const box = document.createElement('div');
+        box.style.cssText = `flex:0 0 180px; background:linear-gradient(135deg,${l.cor}22,${l.cor}44); border:3px solid ${l.cor}; border-radius:16px; padding:1.5rem; text-align:center; box-shadow:0 8px 20px ${l.cor}44;`;
+        box.innerHTML = `
+            <div style="font-size:3rem;">${l.emoji}</div>
+            <div style="font-size:1.2rem; color:#666; margin-top:0.3rem;">${l.pos}º lugar</div>
+            <div style="font-size:1.5rem; font-weight:bold; margin-top:0.5rem; color:#111;">${l.nome}</div>
+        `;
+        container.appendChild(box);
+    });
+
+    if (!campeao) {
+        container.innerHTML = '<p style="color:#888; font-size:1.1rem;">Torneio ainda não finalizado.</p>';
+    }
+}
 
 // Título da página mostra a categoria
 document.addEventListener('DOMContentLoaded', () => {

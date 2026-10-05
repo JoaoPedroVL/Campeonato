@@ -60,36 +60,53 @@
     <header>
         <h1>Torneio de Robôs - Chaveamento ao Vivo</h1>
         <p>Acompanhe em tempo real o andamento das lutas e o chaveamento oficial</p>
+        <nav style="display:flex; justify-content:center; gap:0.5rem; margin-top:1rem;">
+            <button class="active" onclick="mudarAbaPublica('agenda', event)">Agenda</button>
+            <button onclick="mudarAbaPublica('chaveamento', event)">Chaveamento</button>
+            <button onclick="mudarAbaPublica('podio', event)">Pódio</button>
+        </nav>
     </header>
 
     <div class="public-container">
         
-        <!-- SEÇÃO: AGENDA / PRÓXIMAS LUTAS -->
-        <div class="card" style="margin-bottom: 40px; background: #1e1e1e; border: 1px solid #333;">
-            <h2 class="secao-titulo">📅 Agenda de Lutas & Status</h2>
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 300px;">
-                    <h3 style="color: #ff9800;">Chave dos Vencedores (Winners)</h3>
-                    <div id="public-agenda-winners" class="agenda-grid"></div>
-                </div>
-                <div style="flex: 1; min-width: 300px;">
-                    <h3 style="color: #e91e63;">Chave dos Perdedores (Losers)</h3>
-                    <div id="public-agenda-losers" class="agenda-grid"></div>
+        <!-- ABA: AGENDA -->
+        <div id="tab-agenda" class="tab-content active">
+            <div class="card" style="margin-bottom: 40px; background: #1e1e1e; border: 1px solid #333;">
+                <h2 class="secao-titulo">📅 Agenda de Lutas & Status</h2>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 300px;">
+                        <h3 style="color: #ff9800;">Chave dos Vencedores (Winners)</h3>
+                        <div id="public-agenda-winners" class="agenda-grid"></div>
+                    </div>
+                    <div style="flex: 1; min-width: 300px;">
+                        <h3 style="color: #e91e63;">Chave dos Perdedores (Losers)</h3>
+                        <div id="public-agenda-losers" class="agenda-grid"></div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- SEÇÃO: CHAVEAMENTO GRÁFICO -->
-        <div class="card" style="background: #1e1e1e; border: 1px solid #333;">
-            <h2 class="secao-titulo">🏆 Chaveamento Dinâmico</h2>
-            
-            <div class="bracket-wrapper" id="bracket-wrapper" style="background: #181818;">
-                <svg id="svg-lines" class="connections"></svg>
-                <div class="challonge-layout" id="challonge-layout">
-                    <div class="bracket-side losers" id="losers-tree"></div>
-                    <div class="bracket-column" id="center-column"></div>
-                    <div class="bracket-side winners" id="winners-tree"></div>
+        <!-- ABA: CHAVEAMENTO -->
+        <div id="tab-chaveamento" class="tab-content">
+            <div class="card" style="background: #1e1e1e; border: 1px solid #333;">
+                <h2 class="secao-titulo">🏆 Chaveamento Dinâmico</h2>
+                
+                <div class="bracket-wrapper" id="bracket-wrapper" style="background: #181818;">
+                    <svg id="svg-lines" class="connections"></svg>
+                    <div class="challonge-layout" id="challonge-layout">
+                        <div class="bracket-side losers" id="losers-tree"></div>
+                        <div class="bracket-column" id="center-column"></div>
+                        <div class="bracket-side winners" id="winners-tree"></div>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ABA: PÓDIO -->
+        <div id="tab-podio" class="tab-content">
+            <div class="card" style="text-align:center; background: #1e1e1e; border: 1px solid #333;">
+                <h2 class="secao-titulo">🏆 Pódio Final</h2>
+                <div id="podio-container-public" style="display:flex; justify-content:center; gap:2rem; margin-top:2rem; flex-wrap:wrap;"></div>
             </div>
         </div>
 
