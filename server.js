@@ -6,7 +6,11 @@ const path = require('path');
 const crypto = require('crypto');
 
 const admin = require('firebase-admin');
-const serviceAccount = require('./serviceAccount.json');
+// Em produção: credencial vem da var de ambiente GOOGLE_CREDENTIALS (JSON inteiro)
+// Local: usa o arquivo serviceAccount.json (não versionado, ver .gitignore)
+const serviceAccount = process.env.GOOGLE_CREDENTIALS
+  ? JSON.parse(process.env.GOOGLE_CREDENTIALS)
+  : require('./serviceAccount.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
