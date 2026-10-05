@@ -52,7 +52,6 @@ function renderCurrentTab() {
         renderizarPodioPublica();
     }
 }
-}
 
 function renderizarAgendaPublica() {
     const containerWinners = document.getElementById('public-agenda-winners');
