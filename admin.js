@@ -313,7 +313,12 @@ document.getElementById('btnIniciar').addEventListener('click', async () => {
     const woIdx = new Set();
     for (let k = 0; k < byes && k < lutasR1; k++) woIdx.add(Math.floor(k * lutasR1 / byes));
 
+    // Embaralha os competidores para sorteio aleatório das lutas (Fisher-Yates)
     const fila = competidores.map(c => c.nome);
+    for (let i = fila.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [fila[i], fila[j]] = [fila[j], fila[i]];
+    }
     for (let i = 1; i <= lutasR1; i++) {
         const l = lutas[WID(1, i)];
         if (woIdx.has(i - 1)) {
